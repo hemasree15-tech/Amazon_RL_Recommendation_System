@@ -1,0 +1,4 @@
+Model,Precision@5,Recall@5,F1 Score
+Popularity Based,0.2133,0.0899,0.1265
+Collaborative Filtering,0.0,0.0,0.0
+Q-Learning (RL),0.4467,0.2078,0.2836
