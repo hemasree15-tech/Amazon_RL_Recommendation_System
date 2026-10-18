@@ -90,11 +90,11 @@ if __name__ == "__main__":
     from collaborative_filtering import build_similarity_matrix, recommend_for_user_cf
     from q_learning_model import prepare_rl_data, build_states_actions, train_q_learning, recommend_for_user_rl
 
-    data = load_data("../dataset/amazon_reviews.csv")
+    data = load_data("../dataset/amazon.csv")
     data = clean_data(data)
 
     ui_matrix = build_user_item_matrix(data)
-    sim_matrix = build_similarity_matrix(ui_matrix)
+    user_vectors = build_similarity_matrix(ui_matrix)
 
     rl_data = prepare_rl_data(data)
     states, actions_by_state = build_states_actions(rl_data)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     results.append(evaluate_model(
         data, recommend_for_user_cf, "Collaborative Filtering",
-        sample_users, k=5, user_item_matrix=ui_matrix, similarity_df=sim_matrix, df=data, top_n=5
+        sample_users, k=5, user_item_matrix=ui_matrix, user_vectors=user_vectors, df=data, top_n=5
     ))
 
     results.append(evaluate_model(

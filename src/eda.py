@@ -29,8 +29,18 @@ def plot_rating_distribution(df, save_path="graphs/rating_distribution.png"):
     plt.show()
 
 
+def short(text, n=40):
+    """Product names in this dataset are very long, so shorten them for graphs."""
+    return text if len(text) <= n else text[:n] + "..."
+
+
 def plot_top_rated_products(df, save_path="graphs/top_rated_products.png"):
-    top_products = df.groupby('product_name')['rating'].mean().sort_values(ascending=False).head(10)
+    # best rated products that also have many ratings (avoids products with few ratings)
+    popular = df.drop_duplicates('product_id')
+    popular = popular[popular['rating_count'] >= popular['rating_count'].median()]
+    top_products = (popular.sort_values(['avg_rating', 'rating_count'], ascending=False)
+                    .head(10).set_index('product_name')['avg_rating'])
+    top_products.index = [short(n) for n in top_products.index]
     plt.figure(figsize=(8, 5))
     top_products.plot(kind='barh', color='teal')
     plt.title("Top 10 Rated Products")
@@ -43,6 +53,7 @@ def plot_top_rated_products(df, save_path="graphs/top_rated_products.png"):
 
 def plot_most_active_users(df, save_path="graphs/active_users.png"):
     active_users = df['user_id'].value_counts().head(10)
+    active_users.index = [u[:8] + "..." for u in active_users.index]   # shorten long ids
     plt.figure(figsize=(8, 5))
     active_users.plot(kind='bar', color='orange')
     plt.title("Top 10 Most Active Users")
@@ -76,13 +87,13 @@ def plot_reviews_per_category(df, save_path="graphs/reviews_per_category.png"):
 
 
 def plot_reward_distribution(df, save_path="graphs/reward_distribution.png"):
-    # reward mapping same as used in Q-learning model
-    reward_map = {5: 10, 4: 5, 3: 1, 2: -5, 1: -10}
-    df['reward'] = df['rating'].map(reward_map)
+    # same reward formula as used in the Q-learning model
+    from q_learning_model import rating_to_reward
+    df['reward'] = rating_to_reward(df['avg_rating'])
 
     plt.figure(figsize=(6, 4))
-    sns.countplot(x='reward', data=df, palette='coolwarm')
-    plt.title("Reward Distribution (based on Ratings)")
+    sns.histplot(df['reward'], bins=20, color='steelblue')
+    plt.title("Reward Distribution (based on Average Ratings)")
     plt.xlabel("Reward Value")
     plt.ylabel("Count")
     plt.tight_layout()
@@ -91,13 +102,12 @@ def plot_reward_distribution(df, save_path="graphs/reward_distribution.png"):
 
 
 def plot_correlation(df, save_path="graphs/correlation.png"):
-    temp = df.copy()
-    temp['review_length'] = temp['review_text'].apply(len)
-    numeric_df = temp[['rating', 'review_length']]
+    numeric_df = df[['avg_rating', 'rating_count', 'discount_percentage',
+                     'actual_price', 'discounted_price']]
 
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(7, 5))
     sns.heatmap(numeric_df.corr(), annot=True, cmap='Blues')
-    plt.title("Correlation: Rating vs Review Length")
+    plt.title("Correlation: Rating, Rating Count, Discount and Price")
     plt.tight_layout()
     plt.savefig(save_path)
     plt.show()
@@ -106,7 +116,7 @@ def plot_correlation(df, save_path="graphs/correlation.png"):
 if __name__ == "__main__":
     from data_preprocessing import load_data, clean_data
 
-    data = load_data("../dataset/amazon_reviews.csv")
+    data = load_data("../dataset/amazon.csv")
     data = clean_data(data)
 
     dataset_overview(data)

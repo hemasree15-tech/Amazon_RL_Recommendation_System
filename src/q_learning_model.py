@@ -9,7 +9,7 @@ Agent       -> The recommendation system itself
 Environment -> The Amazon product interaction data
 State       -> Which category the user is currently interested in
 Action      -> Which product to recommend from that category
-Reward      -> Based on the rating the user gave (if they engage)
+Reward      -> Based on the product's average rating (4.2 stars -> +6)
 
 Q-Learning Formula:
 --------------------
@@ -27,16 +27,24 @@ import numpy as np
 import random
 import pickle
 
-# Reward mapping based on rating
-REWARD_MAP = {5: 10, 4: 5, 3: 1, 2: -5, 1: -10}
+def rating_to_reward(avg_rating):
+    """
+    Converts a product's average rating (1.0 to 5.0) into a reward.
+    reward = (rating - 3) * 5
+        5.0 stars -> +10,  4.0 -> +5,  3.0 -> 0,  2.0 -> -5,  1.0 -> -10
+    In this dataset almost every product is rated between 3.5 and 4.5, so a
+    smooth formula (instead of whole-star buckets) keeps the small
+    differences between products, e.g. 4.3 stars -> +6.5 but 3.9 -> +4.5.
+    """
+    return (avg_rating - 3) * 5
 
 
 def prepare_rl_data(df):
     """
-    Adds a reward column to the dataframe based on rating.
+    Adds a reward column to the dataframe based on the average rating.
     """
     df = df.copy()
-    df['reward'] = df['rating'].map(REWARD_MAP)
+    df['reward'] = rating_to_reward(df['avg_rating'])
     return df
 
 
@@ -162,7 +170,7 @@ def save_q_table(q_table, path="models/q_table.pkl"):
 if __name__ == "__main__":
     from data_preprocessing import load_data, clean_data
 
-    data = load_data("../dataset/amazon_reviews.csv")
+    data = load_data("../dataset/amazon.csv")
     data = clean_data(data)
     data = prepare_rl_data(data)
 

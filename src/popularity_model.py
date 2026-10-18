@@ -39,7 +39,7 @@ def recommend_for_user_popularity(user_id, df, top_n=5):
 if __name__ == "__main__":
     from data_preprocessing import load_data, clean_data
 
-    data = load_data("../dataset/amazon_reviews.csv")
+    data = load_data("../dataset/amazon.csv")
     data = clean_data(data)
 
     print("Top 5 Popular Products:\n")

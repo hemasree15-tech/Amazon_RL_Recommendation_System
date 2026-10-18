@@ -4,7 +4,7 @@ main.py
 RUN THIS FILE IN SPYDER.
 
 Personalized Product Recommendation System Using Reinforcement Learning
-Based on Amazon Product Reviews.
+Based on Amazon Product Reviews (amazon.csv dataset).
 
 This file runs the complete pipeline:
 1. Load and clean data
@@ -52,7 +52,7 @@ from visualization import plot_model_comparison, plot_reward_progress, plot_cumu
 # STEP 1: LOAD AND CLEAN DATA
 # =========================================================
 print("STEP 1: Loading dataset...")
-df = load_data("dataset/amazon_reviews.csv")
+df = load_data("dataset/amazon.csv")
 check_data_info(df)
 
 df = clean_data(df)
@@ -78,7 +78,7 @@ plot_correlation(df)
 # =========================================================
 print("\nSTEP 3: Building user-item matrix...")
 ui_matrix = build_user_item_matrix(df)
-sim_matrix = build_similarity_matrix(ui_matrix)
+user_vectors = build_similarity_matrix(ui_matrix)
 print("User-Item matrix shape:", ui_matrix.shape)
 
 
@@ -105,7 +105,11 @@ plot_cumulative_reward(reward_history)
 # STEP 5: EVALUATE ALL 3 MODELS
 # =========================================================
 print("\nSTEP 5: Evaluating models...")
-sample_users = df['user_id'].drop_duplicates().sample(30, random_state=42).tolist()
+# In amazon.csv most users reviewed only ONE product, so there is nothing to
+# evaluate for them. We evaluate on users who reviewed at least 2 products.
+reviews_per_user = df['user_id'].value_counts()
+active_user_ids = reviews_per_user[reviews_per_user >= 2].index
+sample_users = pd.Series(active_user_ids).sample(30, random_state=42).tolist()
 
 results = []
 
@@ -116,7 +120,7 @@ results.append(evaluate_model(
 
 results.append(evaluate_model(
     df, recommend_for_user_cf, "Collaborative Filtering",
-    sample_users, k=5, user_item_matrix=ui_matrix, similarity_df=sim_matrix, df=df, top_n=5
+    sample_users, k=5, user_item_matrix=ui_matrix, user_vectors=user_vectors, df=df, top_n=5
 ))
 
 results.append(evaluate_model(
